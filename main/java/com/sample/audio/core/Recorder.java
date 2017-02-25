@@ -12,7 +12,6 @@ public class Recorder {
     private int channelConfig = AudioFormat.CHANNEL_IN_MONO;
     private int audioEncoding = AudioFormat.ENCODING_PCM_16BIT;
     private int sampleRate = 44100;
-    private double attenuation = 1;
     private Thread thread;
     private Callback callback;
 
@@ -48,7 +47,6 @@ public class Recorder {
                 recorder.startRecording();
 
                 while (thread != null && !thread.isInterrupted() && recorder.read(buffer, 0, minBufferSize) > 0) {
-                    if (attenuation != 1) buffer = applyGain(buffer, attenuation);
                     callback.onBufferAvailable(buffer);
                 }
                 recorder.stop();
@@ -63,36 +61,5 @@ public class Recorder {
             thread.interrupt();
             thread = null;
         }
-    }
-
-    public void changeAttenuation(double gain) {
-        if (gain < -25) gain = -25;
-        if (gain > 25) gain = 25;
-
-        if (gain > 0) {
-            attenuation = gain + 1;
-        } else if (gain < 0){
-            attenuation = 1.04D - ((-1) * (gain / 25));
-        } else {
-            attenuation = 1;
-        }
-    }
-
-    private byte[] applyGain(byte[] data, double gain) {
-        byte[] data2 = new byte[data.length];
-        for (int i = 0; i < data.length; i += 2) {
-            short buff = data[i + 1];
-            short buff2 = data[i];
-
-            buff = (short) ((buff & 0xFF) << 8);
-            buff2 = (short) (buff2 & 0xFF);
-
-            short res = (short) (buff | buff2);
-            res = (short) (res * gain);
-
-            data2[i] = (byte) res;
-            data2[i + 1] = (byte) (res >> 8);
-        }
-        return data2;
     }
 }
